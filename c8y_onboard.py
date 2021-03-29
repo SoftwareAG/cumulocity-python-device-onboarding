@@ -75,7 +75,7 @@ class Onboard():
         if (os.path.isfile(self.credentialsFile)):
             with open(self.credentialsFile) as cred_file:
                 self.credentials = json.load(cred_file)
-        if self.credentials.has_key(self.device_id):
+        if self.device_id in self.credentials:
             tenant = self.credentials[self.device_id]["tenant"]
             username = self.credentials[self.device_id]["username"]
             password = self.credentials[self.device_id]["password"]
@@ -117,6 +117,9 @@ class Onboard():
         
     def getCredentials(self):
         return self.credentials[self.device_id]
+
+    def getAuth(self):
+        return self.auth
 
 if __name__ == "__main__":
     device_name = sys.argv[1]

@@ -27,16 +27,16 @@ class sensor(Thread):
         while True:
             self.value = random.gauss(self.value, abs(1 - abs(self.value_setpoint - self.value) / self.value_setpoint) * 5 + 1)
             self.connection.publish("s/us", "200," + self.fragment + "," + self.series + "," + str(round(self.value, 1)) + "," + self.unit, True)
-            if self.value > self.max and not self.alarms.has_key(self.label + "TooHigh"):
+            if self.value > self.max and not self.label + "TooHigh" in self.alarms:
                 self.connection.publish("s/us", "302," + self.label + "TooHigh," + self.label + " is too high!", True)
                 self.alarms[self.label + "TooHigh"] = True
-            if self.value <= self.max and self.alarms.has_key(self.label + "TooHigh"):
+            if self.value <= self.max and self.label + "TooHigh" in self.alarms:
                 self.connection.publish("s/us", "306," + self.label + "TooHigh", True)
                 del self.alarms[self.label + "TooHigh"]
-            if self.value < self.min and not self.alarms.has_key(self.label + "TooLow"):
+            if self.value < self.min and not self.label + "TooLow" in self.alarms:
                 self.connection.publish("s/us", "302," + self.label + "TooLow," + self.label + " is too low!", True)
                 self.alarms[self.label + "TooLow"] = True
-            if self.value >= self.min and self.alarms.has_key(self.label + "TooLow"):
+            if self.value >= self.min and self.label + "TooLow" in self.alarms:
                 self.connection.publish("s/us", "306," + self.label + "TooLow", True)
                 del self.alarms[self.label + "TooLow"]
             time.sleep(self.interval)

@@ -7,7 +7,7 @@ Created on 12 nov. 2019
 
 from c8y_onboard import Onboard
 from sensor import sensor
-from requests import ConnectionError, ConnectTimeout
+from requests import ConnectionError
 import sys, time, requests
 
 device_id = sys.argv[1]
@@ -16,27 +16,27 @@ device_name = sys.argv[2]
 def updateFirmware(name, version, url):
     print("Updating firmware with " + name + " version " + version + " from url " + url)
     try:
-        res = requests.get(url, auth = o.getCredentials())
+        res = requests.get(url, auth = o.getAuth())
         if res.status_code != 200:
             o.publish("s/us", "502,c8y_Firmware,Unable to access firmware at URL " + url + ". Reason is: " + res.text)
         else:
             o.publish("s/us", "503,c8y_Firmware")
             o.publish("s/us", "115," + name + "," + version + "," + url)
-    except ConnectionError, ConnectTimeout:
-        o.publish("s/us", "502,c8y_Firmware,Unable to access firmware at URL " + url)
+    except (ConnectionError) as e:
+        o.publish("s/us", "502,c8y_Firmware,Unable to access firmware at URL " + url + ". Reason is: " + e.strerror)
         
 
 def updateSoftware(name, version, url):
     print("Updating software with " + name + " version " + version + " from url " + url)
     try:
-        res = requests.get(url, auth = o.getCredentials())
+        res = requests.get(url, auth = o.getAuth())
         if res.status_code != 200:
             o.publish("s/us", "502,c8y_Software,Unable to access software at URL " + url + ". Reason is: " + res.text)
         else:
             o.publish("s/us", "503,c8y_Software")
             o.publish("s/us", "116," + name + "," + version + "," + url)
-    except ConnectionError, ConnectTimeout:
-        o.publish("s/us", "502,c8y_Software,Unable to access software at URL " + url)
+    except (ConnectionError) as e:
+        o.publish("s/us", "502,c8y_Software,Unable to access software at URL " + url + ". Reason is: " + e.strerror)
 
 def operation_callback(client, userdata, message):
     message.payload = message.payload.decode("utf-8")
