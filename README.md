@@ -1,6 +1,6 @@
 # cumulocity-python-device-onboarding
 
-This repo contains the following Python scripts compatible with Pyhton 2.7+:
+This repo contains the following Python scripts compatible with Python 2.7+ and Python 3:
 
 c8y_onboard.py contains the Onboard Python class that can be used to quickly register a device in Cumulocity.
 Credentials will be stored in a JSON file.
