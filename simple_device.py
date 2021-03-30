@@ -55,13 +55,14 @@ def operation_callback(client, userdata, message):
 o = Onboard(device_id)
 o.connect()
 o.message_callback_add("s/ds", operation_callback)
-o.subscribe("s/ds")
 
 o.publish("s/us", "100," + device_name + ",simpleDevice", True)
 o.publish("s/us", "114,c8y_Firmware,c8y_Software", True)
 o.publish("s/us", "115,factory_firmware,0.0,", True)
 o.publish("s/us", "116,factory_os,0.0,,factory_ui,0.0", True)
 o.publish("s/us", "117,1", True)
+
+o.subscribe("s/ds")
 
 sensor(o, "Temperature", "T", "°C", 5, 20, 18, 22, "Temperature")
 sensor(o, "Humidity", "RH", "%", 5, 50, 40, 60, "Humidity")

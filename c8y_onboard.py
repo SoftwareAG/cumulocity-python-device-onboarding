@@ -9,8 +9,9 @@ class Onboard():
         self.receivedMessages = []
         self.credentialsReceived = False
         self.credentialsFile = "frpresales-credentials.json"
+        self.bootstrapUsername = "management/devicebootstrap"
+        self.bootstrapPassword = "Fhdt1bb1f"
         self.brokerUrl = "mqtt.cumulocity.com"
-        #self.brokerUrl = "acea.sagdemoitaly.com"
         self.credentials = {}
         self.auth = ()
 
@@ -29,6 +30,10 @@ class Onboard():
     def error_handler(self, client, userdata, message):
         payload = message.payload.decode("utf-8")
         print("Error message " + payload)
+
+    def default_message_callback(self, client, userdata, message):
+        payload = message.payload.decode("utf-8")
+        print("Unhandled message received: " + payload)
     
     def publish(self, topic, message, waitForAck = False):
         mid = self.client.publish(topic, message, 2)[1]
@@ -54,7 +59,7 @@ class Onboard():
     def bootstrap(self):
         print("Credentials not found. Bootstrapping device...")
         self.initMqttClient()
-        self.client.username_pw_set("management/devicebootstrap", "Fhdt1bb1f")
+        self.client.username_pw_set(self.bootstrapUsername, self.bootstrapPassword)
         self.client.connect(self.brokerUrl, 1883)
         self.client.loop_start()
         self.client.subscribe("s/e")
@@ -102,6 +107,7 @@ class Onboard():
         self.client.enable_logger(logger)
         self.client.on_publish = self.on_publish
         self.client.on_connect = self.on_connect
+        self.client.on_message = self.default_message_callback
         
     def waitForAllMessagesPublished(self):
         while self.sentMessages > 0:
