@@ -11,7 +11,7 @@ class Onboard():
         self.credentialsFile = "frpresales-credentials.json"
         self.bootstrapUsername = "management/devicebootstrap"
         self.bootstrapPassword = "Fhdt1bb1f"
-        self.brokerUrl = "mqtt.cumulocity.com"
+        self.brokerUrl = "mqtt.us.cumulocity.com"
         self.credentials = {}
         self.auth = ()
 
@@ -43,10 +43,21 @@ class Onboard():
             print("Publishing message with id " + str(mid))
         if (waitForAck):
             self.sentMessages = self.sentMessages + 1
-            while not mid in self.receivedMessages:
+            print("Waiting for message " + str(mid) + " to be acknowledeged...")
+            counter = 0
+            while not mid in self.receivedMessages and counter < 100:
                 time.sleep(0.25)
-            self.receivedMessages.remove(mid)
+                counter = counter + 1
             self.sentMessages = self.sentMessages - 1
+            if counter < 100:
+                self.receivedMessages.remove(mid)
+                print("Message " + str(mid) + " acknowledeged")
+            else:
+                print("Message " + str(mid) + " was never acknowledeged, trying to reconnect and resend it...")
+                self.client.disconnect()
+                self.connect()
+                self.publish("s/us", '400,Message not acknowledged,message "' + message + '" was never acknowledged')
+                self.publish(topic, message, True)
     
     def on_publish(self, client, userdata, mid):
         print("Message published: " + str(mid))
