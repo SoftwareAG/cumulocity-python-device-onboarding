@@ -9,6 +9,7 @@ from c8y_onboard import Onboard
 from sensor import sensor
 from requests import ConnectionError
 import sys, time, requests
+import multiprocessing as mp
 
 device_id = sys.argv[1]
 device_name = sys.argv[2]
@@ -64,9 +65,14 @@ o.publish("s/us", "117,1", True)
 
 o.subscribe("s/ds")
 
-sensor(o, "Temperature", "T", "°C", 5, 20, 18, 22, "Temperature")
-sensor(o, "Humidity", "RH", "%", 5, 50, 40, 60, "Humidity")
+task_queue = mp.Queue()
+
+sensor(task_queue, "Temperature", "T", "°C", 5, 20, 18, 22, "Temperature")
+sensor(task_queue, "Humidity", "RH", "%", 5, 50, 40, 60, "Humidity")
 
 while True:
-    time.sleep(10)
+    print(f"Getting message from queue...")
+    message = task_queue.get()
+    print(f"Received {message} from queue, publishing it...")
+    o.publish("s/us", message, True)
 

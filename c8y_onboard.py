@@ -5,13 +5,11 @@ import logging, json
 class Onboard():
     def __init__(self, device_id):
         self.device_id = device_id
-        self.sentMessages = 0
-        self.receivedMessages = []
         self.credentialsReceived = False
         self.credentialsFile = "frpresales-credentials.json"
         self.bootstrapUsername = "management/devicebootstrap"
         self.bootstrapPassword = "Fhdt1bb1f"
-        self.brokerUrl = "mqtt.us.cumulocity.com"
+        self.brokerUrl = "mqtt.cumulocity.com"
         self.credentials = {}
         self.auth = ()
 
@@ -20,7 +18,7 @@ class Onboard():
         print("Received message " + payload)
         if payload.startswith("70,"):
             [tenant, username, password] = payload.split(",")[1:4]
-            print("Credentials received! " + tenant +"/" + username + ", " + password)
+            print(f"Credentials received! {tenant}/{username}, {password}")
             self.credentials[self.device_id] = {"tenant": tenant, "username": username, "password": password}
             with open(self.credentialsFile,"w") as cred_file:
                 cred_file.write(json.dumps(self.credentials, indent=4, sort_keys=True))
@@ -33,39 +31,24 @@ class Onboard():
 
     def default_message_callback(self, client, userdata, message):
         payload = message.payload.decode("utf-8")
-        print("Unhandled message received: " + payload)
+        print(f"Unhandled message received: {payload}")
     
     def publish(self, topic, message, waitForAck = False):
-        mid = self.client.publish(topic, message, 2)[1]
+        message_info = self.client.publish(topic, message, 2)
         if message:
-            print("Publishing message: '" + message + "' with id " + str(mid))
+            print(f"Publishing message: '{message}' with id {message_info.mid}")
         else:
-            print("Publishing message with id " + str(mid))
+            print(f"Publishing message with id {message_info.mid}")
         if (waitForAck):
-            self.sentMessages = self.sentMessages + 1
-            print("Waiting for message " + str(mid) + " to be acknowledeged...")
-            counter = 0
-            while not mid in self.receivedMessages and counter < 100:
-                time.sleep(0.25)
-                counter = counter + 1
-            self.sentMessages = self.sentMessages - 1
-            if counter < 100:
-                self.receivedMessages.remove(mid)
-                print("Message " + str(mid) + " acknowledeged")
-            else:
-                print("Message " + str(mid) + " was never acknowledeged, trying to reconnect and resend it...")
-                self.client.disconnect()
-                self.connect()
-                self.publish("s/us", '400,Message not acknowledged,message "' + message + '" was never acknowledged')
-                self.publish(topic, message, True)
+            print(f"Waiting for message {message_info.mid} to be acknowledeged...")
+            message_info.wait_for_publish()
+            print(f"Message {message_info.mid} acknowledeged")
     
     def on_publish(self, client, userdata, mid):
-        print("Message published: " + str(mid))
-        self.receivedMessages.append(mid)
+        print(f"Message published: {str(mid)}")
       
     def on_connect(self, client, userdata, flags, rc):
-        print("Connection returned result: " + mqtt.connack_string(rc))
-    
+        print(f"Connection returned result: {mqtt.connack_string(rc)}")
     
     def bootstrap(self):
         print("Credentials not found. Bootstrapping device...")
@@ -101,7 +84,7 @@ class Onboard():
                 json.dump(self.credentials, cred_file)
             self.auth = (tenant + "/" + username, password)
             print("File with credentials found. Using them to connect...")
-            print("Connecting with: " + tenant +"/" + username + ", " + password)
+            print(f"Connecting with: {tenant}/{username}, {password}")
             self.initMqttClient()
             self.client.username_pw_set(tenant + "/" + username, password)
             self.client.connect(self.brokerUrl, 1883)
@@ -119,12 +102,6 @@ class Onboard():
         self.client.on_publish = self.on_publish
         self.client.on_connect = self.on_connect
         self.client.on_message = self.default_message_callback
-        
-    def waitForAllMessagesPublished(self):
-        while self.sentMessages > 0:
-            print("Waiting for all messages to be acknowledged...")
-            time.sleep(0.25)
-        print("All done!")
         
     def message_callback_add(self, sub, callback):
         self.client.message_callback_add(sub, callback)
@@ -159,5 +136,4 @@ if __name__ == "__main__":
 211,20.8,2019-09-03T08:36:14.432Z
 211,20.9,2019-09-03T08:36:15.432Z
 211,20.10,2019-09-03T08:36:16.432Z''', True)
-    o.waitForAllMessagesPublished()
     
